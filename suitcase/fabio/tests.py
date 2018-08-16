@@ -5,16 +5,39 @@ import hashlib
 import json
 import unittest
 from typing import List
+from fabio import edfimage
+import numpy as np
+from suitcase import fabio
+import os
 
-suitcase = None
+suitcase = fabio
 
 
 class TestRheology(unittest.TestCase):
 
     def setUp(self):
         """Generate test files and headers"""
-        self.paths = []
-        self.header = {}
+        edfpath = 'test.edf'
+        self.header = [('start', {'time': 1534432676.1674924, 'uid': '4becc62f-8f0b-477f-a772-f1c66d6ca70b'}), (
+        'descriptor',
+        {'data_keys': {'image': {'source': 'file', 'dtype': 'array', 'shape': (128, 128)}}, 'time': 1534432676.1675735,
+         'uid': 'eba6ce45-1f7c-457a-8c63-9d5db3374270', 'start': '4becc62f-8f0b-477f-a772-f1c66d6ca70b'}), ('event', {
+            'data': {'image': np.random.random((128, 128)).tolist()}, 'timestamps': {'image': 1534432660.8167932},
+            'time': 1534432660.8167932, 'uid': '4bff5f16-8183-4bfe-8984-7558d263a259',
+            'descriptor': 'eba6ce45-1f7c-457a-8c63-9d5db3374270', 'EDF_DataBlockID': '0.Image.Psd',
+            'EDF_BinarySize': '131072', 'EDF_HeaderSize': '512', 'ByteOrder': 'LowByteFirst', 'DataType': 'DoubleValue',
+            'Dim_1': '128', 'Dim_2': '128', 'Image': '0', 'HeaderID': 'EH:000000:000000:000000', 'Size': '131072',
+            'test': '1'}), ('stop', {'exit_status': 'success', 'time': 1534432676.1710825,
+                                     'uid': '97cf57c1-eb4f-4263-af67-799ddeb10453',
+                                     'start': '4becc62f-8f0b-477f-a772-f1c66d6ca70b'})]
+
+        edfimage.EdfImage(data=np.random.random((128, 128)), header={'test': 1}).write(edfpath)
+
+        self.paths = [edfpath]
+
+    def tearDown(self):
+        for path in self.paths:
+            os.remove(path)
 
     def test_forward_rheology(self):
         """
@@ -27,11 +50,11 @@ class TestRheology(unittest.TestCase):
         pre_transform_checksum = hash_files(self.paths)
 
         # Transform forward/back
-        args = self.paths
+        args = [self.paths]
         kwargs = {}
 
         header = suitcase.ingest(*args, **kwargs)
-        export_paths = suitcase.export(header)
+        export_paths = suitcase.export(header, edfimage.EdfImage)
 
         # Generate final checksum
         post_transform_checksum = hash_files(export_paths)
