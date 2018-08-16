@@ -87,14 +87,14 @@ def ingest(paths: Iterator[str]) -> Generator[Tuple[str, dict], None, None]:
     yield 'stop', stop
 
 
-def _gen_event(path: str, descriptor):
+def _gen_event(path: str, descriptoruid):
     mtime = os.path.getmtime(path)
     fimg = fabio.open(path)
     event = {'data': {'image': fimg.data},
              'timestamps': {'image': mtime, },
              'time': mtime,
              'uid': str(uuid.uuid4()),
-             'descriptor': descriptor,
+             'descriptor': descriptoruid,
              **fimg.header
              }
     return event
